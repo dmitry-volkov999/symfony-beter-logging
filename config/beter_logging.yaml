@@ -1,0 +1,58 @@
+parameters:
+    app.name: 'titration-widget'
+    app.service: 'manager'
+    logstash.host: 'host.docker.internal'
+    logstash.port: 5045
+    logstash.socketTransport: 'tcp'
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            string $envName: '%kernel.environment%'
+            string $app: '%app.name%'
+            string $service: '%app.service%'
+            string $execType: 'web'
+            string $host: 'host.docker.internal' # would be called gethostname()
+
+            int $length: 32
+            bool $searchInHeaders: true
+            string $correlationIdHeaderName: 'X-Request-Id'
+
+            #            bool $colorize: true
+            #            int $indentSize: 4
+            int $traceDepth: 5
+
+    _instanceof:
+        Monolog\Processor\ProcessorInterface:
+            tags: { name: 'monolog.processor' }
+
+    App\BeterLoggingBundle\src\Handler\LogstashHandler: ~
+    App\BeterLoggingBundle\src\Handler\StandardStreamHandler: ~
+
+    logstash:
+        class: App\BeterLoggingBundle\src\Handler\LogstashHandler
+        arguments:
+            $host: "%logstash.host%"
+            $port: "%logstash.port%"
+            $socketTransport: "%logstash.socketTransport%"
+            $level: 'info'
+            $bubble: false
+            $persistent: false
+            $socketTimeout: 0.5
+            $writingTimeout: 0.5
+            $connectionTimeout: 0.1
+            $chunkSize: 3
+        calls:
+            - setFormatter: ['@App\BeterLoggingBundle\src\Formatter\LogstashFormatter']
+
+    standard_stream:
+        class: App\BeterLoggingBundle\src\Handler\StandardStreamHandler
+        arguments:
+            $stream: php://stderr
+            $level: info
+            $bubble: true
+        calls:
+            - setFormatter: ['@App\BeterLoggingBundle\src\Formatter\ConsoleFormatter']

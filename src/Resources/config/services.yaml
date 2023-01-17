@@ -1,0 +1,72 @@
+parameters:
+    beter.logger.app.name: 'app.name'
+    beter.logger.app.service: 'app.service'
+    beter.logger.logstash.host: 'host.docker.internal'
+    beter.logger.logstash.port: 5045
+    beter.logger.logstash.socketTransport: 'tcp'
+
+    beter.logger.console_formatter.colorize: true
+    beter.logger.console_formatter.indentSize: 4
+    beter.logger.console_formatter.traceDepth: 5
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            # BasicProcessor
+            string $envName: '%kernel.environment%'
+            string $app: '%beter.logger.app.name%'
+            string $service: '%beter.logger.app.service%'
+            string $execType: 'web'
+            string $host: 'host.docker.internal' # would be called gethostname()
+
+            #CorrelationIdProcessor
+            int $length: 32
+            bool $searchInHeaders: true
+            string $correlationIdHeaderName: 'X-Request-Id'
+
+            #ConsoleFormatter
+            bool $colorize: '%beter.logger.console_formatter.colorize%'
+            int $indentSize: '%beter.logger.console_formatter.indentSize%'
+            int $traceDepth: '%beter.logger.console_formatter.traceDepth%'
+
+#    _instanceof:
+#        Monolog\Processor\ProcessorInterface:
+#            tags: { name: 'monolog.processor' }
+
+    Beter\Bundle\BeterLoggingBundle\Processor\BasicProcessor:
+        tags: { name: 'monolog.processor' }
+    Beter\Bundle\BeterLoggingBundle\Processor\CorrelationIdProcessor:
+        tags: { name: 'monolog.processor' }
+
+    Beter\Bundle\BeterLoggingBundle\Handler\LogstashHandler: ~
+    Beter\Bundle\BeterLoggingBundle\Handler\StandardStreamHandler: ~
+    Beter\Bundle\BeterLoggingBundle\Formatter\LogstashFormatter: ~
+    Beter\Bundle\BeterLoggingBundle\Formatter\ConsoleFormatter: ~
+
+    logstash:
+        class: Beter\Bundle\BeterLoggingBundle\Handler\LogstashHandler
+        arguments:
+            $host: "%beter.logger.logstash.host%"
+            $port: "%beter.logger.logstash.port%"
+            $socketTransport: "%beter.logger.logstash.socketTransport%"
+            $level: 'info'
+            $bubble: false
+            $persistent: false
+            $socketTimeout: 0.5
+            $writingTimeout: 0.5
+            $connectionTimeout: 0.1
+            $chunkSize: 3
+        calls:
+            - setFormatter: ['@Beter\Bundle\BeterLoggingBundle\Formatter\LogstashFormatter']
+
+    standard_stream:
+        class: Beter\Bundle\BeterLoggingBundle\Handler\StandardStreamHandler
+        arguments:
+            $stream: php://stderr
+            $level: info
+            $bubble: true
+        calls:
+            - setFormatter: ['@Beter\Bundle\BeterLoggingBundle\Formatter\ConsoleFormatter']
