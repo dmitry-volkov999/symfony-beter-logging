@@ -8,9 +8,6 @@ use Monolog\Processor\ProcessorInterface;
 
 class CorrelationIdProcessor implements ProcessorInterface
 {
-    protected string $envName;
-    protected string $app;
-    protected string $service;
     protected string $correlationId;
 
     /**
