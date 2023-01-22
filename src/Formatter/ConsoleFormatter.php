@@ -93,10 +93,10 @@ class ConsoleFormatter extends LineFormatter
      */
     public function format(LogRecord $record): string
     {
-        $levelCode = $record['level'];
+        $levelCode = $record->level->value;
         $levelColor = $this->levelCodeToColorMap[$levelCode] ?? static::COLOR_DEFAULT_LEVEL;
 
-        $record = $this->transformFormat($record);
+        $record = $this->transformFormat($this->normalizeRecord($record));
 
         $vars = $this->normalize($record);
 
