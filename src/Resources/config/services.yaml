@@ -38,8 +38,8 @@ services:
             string $envName: '%kernel.environment%'
             string $app: '%beter.logger.app.name%'
             string $service: '%beter.logger.app.service%'
-            string $execType: 'web'
-            string $host: 'host.docker.internal' # would be called gethostname()
+            string $execType: '%beter.logger.basic_processor.exec_type%'
+            string $host: '%beter.logger.basic_processor.host%'
 
             #CorrelationIdProcessor
             int $length: 32
