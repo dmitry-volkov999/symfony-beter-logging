@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Beter\Bundle\BeterLoggingBundle\EventSubscriber;
 
-use Beter\Bundle\BeterLoggingBundle\Exception\HandlerException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
@@ -15,36 +14,32 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 final class CliSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface $logger,
+        private readonly string $startTime
     ) {}
 
     public function onConsoleCommand(ConsoleCommandEvent $event): void
     {
         try {
-            $command = $event->getCommand()->getName();
-            $this->stopwatch->start($command);
+            $command = $event->getCommand()?->getName();
         } catch (\Throwable $t) {
-            $this->logger->error(
-                new HandlerException('An error occurred during the context gathering', $event, $t)
-            );
+            $this->logger->error('An error occurred during the context gathering', ['exception' => $t]);
         }
 
-        $this->logger->info('CLI command start', ['command' => $command]);
+        $this->logger->info('CLI command start', ['command' => $command ?? 'unknown']);
     }
 
     public function onConsoleError(ConsoleErrorEvent $event): void
     {
         $context = [];
         try {
-            $command = $event->getCommand()->getName();
-            $context['command'] = $command;
+            $command = $event->getCommand()?->getName();
+            $context['command'] = $command ?? 'unknown';
             $context['exitStatus'] = $event->getExitCode();
-            $context['execTimeSec'] = microtime(true) - 0;
+            $context['execTimeSec'] = microtime(true) - $this->startTime;
             $context['memoryPeakUsageBytes'] = memory_get_peak_usage(true);
         } catch (\Throwable $t) {
-            $this->logger->error(
-                new HandlerException('An error occurred during the context gathering', $event, $t)
-            );
+            $this->logger->error('An error occurred during the context gathering', ['exception' => $t]);
         }
 
         $this->logger->info('CLI command error', $context);
@@ -54,15 +49,13 @@ final class CliSubscriber implements EventSubscriberInterface
     {
         $context = [];
         try {
-            $command = $event->getCommand()->getName();
-            $context['command'] = $command;
+            $command = $event->getCommand()?->getName();
+            $context['command'] = $command ?? 'unknown';
             $context['exitStatus'] = $event->getExitCode();
-            $context['execTimeSec'] = $this->stopwatch->stop($command);
+            $context['execTimeSec'] = microtime(true) - $this->startTime;
             $context['memoryPeakUsageBytes'] = memory_get_peak_usage(true);
         } catch (\Throwable $t) {
-            $this->logger->error(
-                new HandlerException('An error occurred during the context gathering', $event, $t)
-            );
+            $this->logger->error('An error occurred during the context gathering', ['exception' => $t]);
         }
 
         $this->logger->info('CLI command end', $context);

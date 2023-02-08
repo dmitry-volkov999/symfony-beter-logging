@@ -27,5 +27,12 @@ class BeterLoggingExtension extends Extension
             new FileLocator(__DIR__ . '/../Resources/config')
         );
         $loader->load('services.yaml');
+
+        $parameterBag = $container->getParameterBag();
+        $parameterBag->add([
+            'beter.logger.start_time' => microtime(true),
+            'beter.logger.basic_processor.exec_type' => php_sapi_name() === 'cli' ? 'cli' : 'web',
+            'beter.logger.basic_processor.host' => gethostname(),
+        ]);
     }
 }
