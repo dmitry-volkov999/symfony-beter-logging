@@ -3,6 +3,11 @@ parameters:
     beter.logger.app.name: 'app.name'
     beter.logger.app.service: 'app.service'
 
+    # CorrelationId processor parameters
+    beter.logger.correlation_id_processor.length: 32
+    beter.logger.correlation_id_processor.search_in_headers: true
+    beter.logger.correlation_id_processor.header_name: 'X-Request-Id'
+
     # Logstash handler parameters
     beter.logger.logstash_handler.host: 'host.docker.internal'
     beter.logger.logstash_handler.port: 5045
@@ -42,9 +47,9 @@ services:
             string $host: '%beter.logger.basic_processor.host%'
 
             #CorrelationIdProcessor
-            int $length: 32
-            bool $searchInHeaders: true
-            string $correlationIdHeaderName: 'X-Request-Id'
+            int $length: '%beter.logger.correlation_id_processor.length%'
+            bool $searchInHeaders: '%beter.logger.correlation_id_processor.search_in_headers%'
+            string $correlationIdHeaderName: '%beter.logger.correlation_id_processor.header_name%'
 
     Beter\Bundle\BeterLoggingBundle\Processor\BasicProcessor:
         tags: { name: 'monolog.processor' }
